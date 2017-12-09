@@ -46,24 +46,24 @@ class BatchLoader(object):
             input1[i], input2[i] = use_dat[cate1][first], use_dat[cate2][second]
         return input1,input2,yout
 
-    def do_test(self,sess,corr_pred,batch_size=100):
+    def make_batch_oneshot(self,test_im):
         '''
-        Test the model!!!
-        match all pairs from 10000 => 5 x 10^7 pairs would be fine?
+        Input: 1-image from test
+        Output: random an image from all class to test neighborhood
         '''
+        chosen = [rd.choice(_) for _ in self.X_train_group]
+        test_stack = [test_im for _ in range(self.num_class)]
+        return test_stack, chosen
+
+    def do_test_oneshot(self, sess, dist,X1,X2,repeat=3):
         test_size = len(self.X_test)
-        all_pair = it.combinations(list(range(test_size)),2)
-        num_count = 0
-        input1 = input2 = np.zeros((batch_size,28,28,1))
-        expected = np.zeros((batch_size,1))
-        num_corr = 0
-        for x,y in all_pair:
-            input1[num_count] = self.X_test[x]
-            input2[num_count] = self.X_test[y]
-            expected[num_count] = 1 if self.y_test[x] == self.y_test[y] else 0
-            num_count += 1
-            if num_count % batch_size == 0:
-                feed_dict = {X1:input1,X2:input2,y:expected}
-                num_corr += sess.run(corr_pred, feed_dict=feed_dict)
-                num_count = 0
-        return num_corr / (test_size * (test_size-1)/2)
+        count_correct = 0
+        for i in range(test_size):
+            all_pred = np.zeros(self.num_class)
+            for j in range(repeat):
+                first, second = self.make_batch_oneshot(self.X_test[i])
+                tmp = sess.run(dist, feed_dict={X1:first, X2:second})
+                # print(tmp[:,0])
+                all_pred += tmp[:,0]
+            count_correct += 1 if np.argmax(all_pred) == self.y_test[i] else 0
+        return count_correct/test_size
