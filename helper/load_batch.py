@@ -63,7 +63,6 @@ class BatchLoader(object):
             for j in range(repeat):
                 first, second = self.make_batch_oneshot(self.X_test[i])
                 tmp = sess.run(dist, feed_dict={X1:first, X2:second})
-                # print(tmp[:,0])
                 all_pred += tmp[:,0]
             count_correct += 1 if np.argmax(all_pred) == self.y_test[i] else 0
         return count_correct/test_size
