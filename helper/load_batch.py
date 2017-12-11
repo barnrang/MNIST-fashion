@@ -55,14 +55,19 @@ class BatchLoader(object):
         test_stack = [test_im for _ in range(self.num_class)]
         return test_stack, chosen
 
-    def do_test_oneshot(self, sess, dist,X1,X2,repeat=3):
+    def do_test_oneshot(self, sess, dist,X1,X2,is_training,repeat=3):
+        '''
+        Run Evaluation Test on X_test
+        repeat determine how many time random comparisons are require which
+        would gain more accuracy similarly to kNN
+        '''
         test_size = len(self.X_test)
         count_correct = 0
         for i in range(test_size):
             all_pred = np.zeros(self.num_class)
             for j in range(repeat):
                 first, second = self.make_batch_oneshot(self.X_test[i])
-                tmp = sess.run(dist, feed_dict={X1:first, X2:second})
+                tmp = sess.run(dist, feed_dict={X1:first, X2:second, is_training:False})
                 all_pred += tmp[:,0]
             count_correct += 1 if np.argmax(all_pred) == self.y_test[i] else 0
         return count_correct/test_size
